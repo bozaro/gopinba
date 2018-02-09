@@ -20,6 +20,7 @@ type Timer struct {
 
 	// private stuff for simpler api
 	stopped  bool
+	counter  uint32
 	started  time.Time
 	duration time.Duration
 }
@@ -160,7 +161,7 @@ func (pc *Client) SendRequest(request *Request) error {
 	mergeTags(&pbreq, request.Tags)
 
 	for _, timer := range request.timers {
-		pbreq.TimerHitCount = append(pbreq.TimerHitCount, 1)
+		pbreq.TimerHitCount = append(pbreq.TimerHitCount, timer.counter)
 		pbreq.TimerValue = append(pbreq.TimerValue, float32(timer.duration.Seconds()))
 		mergeTimerTags(&pbreq, timer.Tags)
 	}
@@ -196,6 +197,7 @@ func (req *Request) TimerAdd(timer *Timer) {
 
 func TimerStart(tags map[string]string) *Timer {
 	return &Timer{
+		counter:  1,
 		duration: 0,
 		Tags:     tags,
 		stopped:  false,
@@ -204,7 +206,12 @@ func TimerStart(tags map[string]string) *Timer {
 }
 
 func NewTimer(tags map[string]string, duration time.Duration) *Timer {
+	return NewTimerWithCounter(tags, duration, 1)
+}
+
+func NewTimerWithCounter(tags map[string]string, duration time.Duration, counter uint32) *Timer {
 	return &Timer{
+		counter:  counter,
 		duration: duration,
 		Tags:     tags,
 		stopped:  true,
